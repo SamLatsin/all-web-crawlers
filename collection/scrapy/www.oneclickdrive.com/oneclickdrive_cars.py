@@ -34,7 +34,9 @@ class OneclickdriveSpider(scrapy.Spider):
         data = {}
         data["url"] = response.url
         bread = response.css(".breadcrumb > div > a:nth-child(1) > span:nth-child(1)::text").extract()
-        data["name"] = bread[-2].strip() + " " + bread[-1].strip()
+        # data["name"] = bread[-2].strip() + " " + bread[-1].strip()
+        data["mark"] = bread[-2].strip()
+        data["model"] = bread[-1].strip()
         data["year"] = get_numbers(response.css(".dsktit::text").extract_first())[-1]
         imgs = response.css("img.imagegal::attr(src)").extract()
         data["imgs"] = []
