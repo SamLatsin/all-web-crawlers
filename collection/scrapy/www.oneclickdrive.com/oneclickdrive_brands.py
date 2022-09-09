@@ -23,6 +23,7 @@ class OneclickdriveSpider(scrapy.Spider):
         counts = response.css(".item_car_brand_text_name > span::text").extract()
         for index, brand in enumerate(brands):
             data["brand"] = brand.strip()
-            data["img"] = imgs[index]
+            data["img_link"] = imgs[index]
+            data["img_name"] = imgs[index].split("/")[-1].split("?")[0]
             data["count"] = get_numbers(counts[index])[0]
             yield data
