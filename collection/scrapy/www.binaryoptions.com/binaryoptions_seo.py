@@ -5,7 +5,6 @@ import re
 import urllib.request
 import math
 import json
-import pycountry
 
 
 class BinaryoptionsSpider(scrapy.Spider):
@@ -13,18 +12,26 @@ class BinaryoptionsSpider(scrapy.Spider):
     allowed_domains = ['www.binaryoptions.com']
     start_urls = ['https://www.binaryoptions.com/']
 
-    # def __init__(self):
-    #     self.links=[]
+    def __init__(self):
+        self.filter=["/id/", "/pt/", "/tr/", "/ru/", "/ms/", "/es/", "/fr/", "/it/", 
+                     "/uk/", "/ka/", "/bg/", "/cs/", "/da/", "/de/", "/el/", "/et/", 
+                     "/fi/", "/hu/", "/nb/", "/pl/", "/sv/", "/sr/", "/ro/", "/co/",
+                     "/mx/", "/es_ar/", "/ve/", "/az/", "/hr/", "/nl/", "/sk/", "/lt/", 
+                     "/th/", "/vi/", "/ko/", "/ja/", "/ar/", "/za/", "/ur/", "/do/",
+                     "/pe/", "/pt_pt/", "/bn/", "/ta/", "/lk/", "/cl/", "/ec/", "/sw/",
+                     "/hk/", "/cn/", "/tw/", "/be/", "/am/", "/af/", "/kk/", "/ceb/", 
+                     "/uy/", "/fa/", "/sq/", "/uz/", "/lv/", "/sl/", "/au/", "/ca/",
+                     "/hi/", "/cr/", "/gt/", "/pr/", "/ch/", "/at/"]
 
     def parse(self, response):
-        # self.links.append(response.url)
         data = {}
         data["url"] = response.url
         data["h1"] = response.css("h1::text").extract_first()
         data["title"] = response.css('head > title::text').extract_first()
         data["description"] = response.xpath("//meta[@name='description']/@content").extract_first()
 
-        for href in response.css('a::attr(href)'):
-            yield response.follow(href, self.parse)
+        for href in response.css('a::attr(href)').extract():
+            if not any(country in href for country in self.filter):
+                yield response.follow(href, self.parse)
 
         yield data
