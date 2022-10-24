@@ -5,6 +5,7 @@ import re
 import urllib.request
 import math
 import json
+from urllib import parse
 
 def remove_spaces(text):
     return re.sub(' +', ' ', text.strip())
@@ -19,6 +20,7 @@ class OneclickdriveSpider(scrapy.Spider):
     def parse(self, response):
         # yield Request("https://www.oneclickdrive.com/details/index/search-car-rentals-dubai/Mercedes-Benz/AMG-G63/?id=9778", callback=self.parse_car, dont_filter=True)
         # yield Request("https://www.oneclickdrive.com/details/index/search-car-rentals-dubai/Nissan/Kicks/?id=7578", callback=self.parse_car, dont_filter=True)
+        # yield Request("https://www.oneclickdrive.com/details/index/search-car-rentals-dubai/Lamborghini/Urus/?id=13480", callback=self.parse_car, dont_filter=True)
         count = response.css("#hidfilter::text").extract_first()
         count = get_numbers(count)
         count = math.ceil(float(count[2]) / float(count[1]))
@@ -37,6 +39,7 @@ class OneclickdriveSpider(scrapy.Spider):
         # data["name"] = bread[-2].strip() + " " + bread[-1].strip()
         data["mark"] = bread[-2].strip()
         data["model"] = bread[-1].strip()
+            
         data["year"] = get_numbers(response.css(".dsktit::text").extract_first())[-1]
         imgs = response.css("img.imagegal::attr(src)").extract()
         data["imgs"] = []
@@ -66,39 +69,27 @@ class OneclickdriveSpider(scrapy.Spider):
         if "insurance" not in data:
             data["insurance"] = 0
 
-        prices = response.css(".col-md-4 > .text-right.rate-box")
-        for price in prices:
-            term = price.css(".text-light::text").extract_first()
-            term_price = price.css(".font-bold > span::text").extract()
-            if "Day" in term:
-                data["price_day"]   = "".join(get_numbers(term_price[-1]))
-            if "Month" in term:
-                data["price_month"] = "".join(get_numbers(term_price[-1]))
+        data["price_day"] = ""
+        data["price_month"] = ""
+        data["price_week"] = ""
+        data["mileage_day"] = ""
+        data["mileage_month"] = ""
+        data["mileage_week"] = ""
 
-        # price_table = response.css(".price-table")
-        data["price_week"] = response.css("tr.pricboxdt:nth-child(3) > td:nth-child(2)::text").extract_first()
-        if "N.A." not in data["price_week"]:
-            data["price_week"] = "".join(get_numbers(data["price_week"]))
-        else:
-            data["price_week"] = ""
-
-        data["mileage_day"] = response.css("tr.pricboxdt:nth-child(2) > td:nth-child(3)::text").extract_first()
-        if "N.A." not in data["mileage_day"]:
-            data["mileage_day"] = "".join(get_numbers(data["mileage_day"]))
-        else:
-            data["mileage_day"] = ""
-
-        data["mileage_month"] = response.css("tr.pricboxdt:nth-child(4) > td:nth-child(3)::text").extract_first()
-        if "N.A." not in data["mileage_month"]:
-            data["mileage_month"] = "".join(get_numbers(data["mileage_month"]))
-        else:
-            data["mileage_month"] = ""
-
-        data["mileage_week"] = response.css("tr.pricboxdt:nth-child(3) > td:nth-child(3)::text").extract_first()
-        if "N.A." not in data["mileage_week"]:
-            data["mileage_week"] = "".join(get_numbers(data["mileage_week"]))
-        else:
-            data["mileage_week"] = ""
+        rows = response.css(".price-table .pricboxdt")
+        for row in rows:
+            elements = row.css("td::text").extract()
+            elements = [x for x in elements if x.strip()]
+            for index,elem in enumerate(elements):
+                if "Day" in elem:
+                    data["price_day"] = "".join(get_numbers(elements[index+2])) 
+                    data["mileage_day"] = "".join(get_numbers(elements[index+1])) 
+                if "Week" in elem:
+                    data["price_week"] = "".join(get_numbers(elements[index+2])) 
+                    data["mileage_week"] = "".join(get_numbers(elements[index+1])) 
+                if "Month" in elem:
+                    data["price_month"] = "".join(get_numbers(elements[index+2])) 
+                    data["mileage_month"] = "".join(get_numbers(elements[index+1])) 
 
         spans = response.css("div.cardetaillist > div > span::text").extract()
         data["insurance_type"] = ""
@@ -242,6 +233,54 @@ class OneclickdriveSpider(scrapy.Spider):
 
         data["partner_rating"] = response.css("span[itemprop='ratingValue']::text").extract_first().strip()
 
+        data["category"] = bread[0]
+        data["phone"] = get_numbers(response.css("#mobhideconct > a:nth-child(1) > span:nth-child(2)::text").extract_first())[0]
+        data["seats"] = ""
+
+        specs = response.css(".fespecbox > li::text").extract()
+        for spec in specs:
+            if "Passengers" in spec:
+                data["seats"] = get_numbers(spec)[0]
+
+        tags = response.css(".btnspec > button::text").extract()
+        data["tags"] = []
+        for tag in tags:
+            data["tags"].append(tag.strip())
+
+        data["tags"] = ",".join(data["tags"])
+
+        url = response.url
+        car_id = parse.parse_qs(parse.urlparse(url).query)['id'][0]
+
+        params = {
+            'car_id': car_id,
+            'emirate': 'Dubai',
+            'rate': '1',
+            'default_emirate': 'Dubai',
+            'currency_redirect_and': '',
+            'lang_anchor': 'https://www.oneclickdrive.com',
+            'lang_code': 'en',
+            'currency': 'AED',
+            'redirect_url': '/details',
+        }
+        yield scrapy.FormRequest('https://www.oneclickdrive.com/details/similar_cars', callback=self.parse_similar,
+                                     method='POST', formdata=params, meta={'data':data})
+
+    def parse_similar(seld, response):
+        data = response.meta["data"]
+
+        similar = response.css("a::attr(href)").extract()
+        data["similar"] = []
+        for link in similar:
+            if "?id=" in link:
+                data["similar"].append(link)
+        data["similar"] = set(data["similar"])
+        data["similar"] = ",".join(data["similar"])
+
+        data['name'] = data["mark"] + " " + data["model"]
+        data['slug'] = "-".join(data["name"].lower().split(" "))
+        data['markSlug'] = "-".join(data["mark"].lower().split(" "))
+        data['modelSlug'] = "-".join(data["model"].lower().split(" "))
         yield data
 
 
