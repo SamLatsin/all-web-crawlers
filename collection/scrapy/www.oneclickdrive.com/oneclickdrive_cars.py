@@ -20,7 +20,7 @@ class OneclickdriveSpider(scrapy.Spider):
     def parse(self, response):
         # yield Request("https://www.oneclickdrive.com/details/index/search-car-rentals-dubai/Mercedes-Benz/AMG-G63/?id=9778", callback=self.parse_car, dont_filter=True)
         # yield Request("https://www.oneclickdrive.com/details/index/search-car-rentals-dubai/Nissan/Kicks/?id=7578", callback=self.parse_car, dont_filter=True)
-        # yield Request("https://www.oneclickdrive.com/details/index/search-car-rentals-dubai/Lamborghini/Urus/?id=13480", callback=self.parse_car, dont_filter=True)
+        # yield Request("https://www.oneclickdrive.com/details/index/search-car-rentals-dubai/Audi/A6/?id=13153", callback=self.parse_car, dont_filter=True)
         count = response.css("#hidfilter::text").extract_first()
         count = get_numbers(count)
         count = math.ceil(float(count[2]) / float(count[1]))
@@ -148,8 +148,8 @@ class OneclickdriveSpider(scrapy.Spider):
                 data["exterior_colors"].append(colors)
             data["exterior_colors"] = json.dumps(data["exterior_colors"])
 
-        car_specs_imgs = response.css("ul.webonly:nth-child(2) > li > img::attr(src)").extract()
-        car_specs_names_raw = response.css("ul.webonly:nth-child(2) > li::text").extract()
+        car_specs_imgs = response.css("div.row:nth-child(6) > div:nth-child(1) > div:nth-child(1) > ul:nth-child(2) > li > img::attr(src)").extract()
+        car_specs_names_raw = response.css("div.row:nth-child(6) > div:nth-child(1) > div:nth-child(1) > ul:nth-child(2) > li::text").extract()
         car_specs_names = []
         car_specs = []
         for name in car_specs_names_raw:
@@ -193,9 +193,10 @@ class OneclickdriveSpider(scrapy.Spider):
                 data["partner_year"] = number
 
         try:
-            data["work_hours"] = response.css("span.text-right:nth-child(3)::text").extract_first().strip()
+            data["work_hours"] = response.css("span.text-right:nth-child(1)::text").extract_first().strip()
         except Exception:
             data["work_hours"] = response.css(".timebar > span:nth-child(2)::text").extract_first().strip()
+
         data["partner_address"] = response.css(".addressbox::text").extract()[1].strip()
 
         elements = response.css(".card-body > *::text").extract()
@@ -234,7 +235,7 @@ class OneclickdriveSpider(scrapy.Spider):
         data["partner_rating"] = response.css("span[itemprop='ratingValue']::text").extract_first().strip()
 
         data["category"] = bread[0]
-        data["phone"] = get_numbers(response.css("#mobhideconct > a:nth-child(1) > span:nth-child(2)::text").extract_first())[0]
+        data["phone"] = "".join(get_numbers(response.css("#mobhideconct > a:nth-child(1) > span:nth-child(2)::text").extract_first()))
         data["seats"] = ""
 
         specs = response.css(".fespecbox > li::text").extract()
