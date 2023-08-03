@@ -27,9 +27,9 @@ def uploadToCloud(name):
     session = boto3.session.Session()
     s3 = session.client(
         service_name='s3',
-        endpoint_url='https://storage.yandexcloud.net',
-        aws_access_key_id='YCAJEVUI8MhS424n9P0MCIjjF',
-        aws_secret_access_key='YCOEPssN70yPUO_jcK1m31QVNgBO0O2QMfyO0UkW',
+        endpoint_url='',
+        aws_access_key_id='',
+        aws_secret_access_key='',
     )
     s3.upload_file(name, 'autosalons', "autos/" + name)
     return
@@ -47,7 +47,7 @@ def deletePhotos():
             os.remove(file)
 
 def apiImport(data):
-    token = "xLmxLZ7Sk3vqPBrsWUyb5hrZDqmLzRkz"
+    token = ""
     new_data = []
     for key in data:
         new_data.append(data[key])
@@ -56,7 +56,7 @@ def apiImport(data):
         'token': token,
         'data': json.dumps(new_data)
     }
-    response = requests.post('http://panel.autosalons.ru/parsing/import_car_raw', data=data)
+    response = requests.post('http://your-domain/parsing/import_car_raw', data=data)
     return
 
 def parse_car(driver, data):
