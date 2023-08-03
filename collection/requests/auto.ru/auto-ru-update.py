@@ -68,7 +68,7 @@ def processPage(text):
     return res
 
 def getCarsCount():
-    token = "xLmxLZ7Sk3vqPBrsWUyb5hrZDqmLzRkz"
+    token = ""
 
     data = {
         'token': token,
@@ -77,7 +77,7 @@ def getCarsCount():
     return response.text
 
 def getCars(page, limit):
-    token = "xLmxLZ7Sk3vqPBrsWUyb5hrZDqmLzRkz"
+    token = ""
 
     data = {
         'token': token,
@@ -88,7 +88,7 @@ def getCars(page, limit):
     return response.text
 
 def updateDB(pool):
-    token = "xLmxLZ7Sk3vqPBrsWUyb5hrZDqmLzRkz"
+    token = ""
 
     data = {
         'token': token,
